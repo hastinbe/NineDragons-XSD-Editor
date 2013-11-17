@@ -9,6 +9,32 @@ namespace NineDragons_XSD_Editor.Utilities
 {
     public class Common
     {
+        /// <summary>
+        /// Xor's a byte array using two keys. The key is alternated each byte.
+        /// </summary>
+        public static byte[] BikeyXorcize(byte[] buffer, byte[] key)
+        {
+            return BikeyXorcize(buffer, GetPaddedByteStringLength(buffer), key);
+        }
+
+        /// <summary>
+        /// Xor's a byte array using two keys. The key is alternated each byte.
+        /// </summary>
+        public static byte[] BikeyXorcize(byte[] buffer, int len, byte[] key)
+        {
+            for (int i = 0; i < len; i++)
+                buffer[i] = (byte)(buffer[i] ^ key[i % 2]);
+            return buffer;
+        }
+
+        public static int GetPaddedByteStringLength(byte[] str)
+        {
+            for (int i = 0; i < str.Length; i+=2)
+                if (str[i] == 0)
+                    return i;
+            return str.Length;
+        }
+
         public static bool ByteArraysEqual(byte[] arr1, byte[] arr2)
         {
             if (arr1 == null && arr2 == null) return true;

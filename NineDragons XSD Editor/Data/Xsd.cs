@@ -26,6 +26,19 @@ namespace NineDragons_XSD_Editor.Data
             Path = path;
         }
 
+        public Xsd(string path, byte[] keys)
+            : this()
+        {
+            Path = path;
+            Keys = keys;
+        }
+
+        public Xsd(byte[] keys)
+            : this()
+        {
+            Keys = keys;
+        }
+
         private void BindEvents()
         {
             tableCollection.PropertyChanged +=
@@ -44,12 +57,12 @@ namespace NineDragons_XSD_Editor.Data
             return load(Path);
         }
 
-        public bool write()
+        public bool write(bool withEncryption = false)
         {
-            return write(Path);
+            return write(Path, withEncryption);
         }
 
-        public bool write(string path)
+        public bool write(string path, bool withEncryption = false)
         {
             if (String.IsNullOrEmpty(path))
                 return false;
@@ -66,16 +79,18 @@ namespace NineDragons_XSD_Editor.Data
                     // Write tables
                     foreach (XsdTable table in tableCollection.Tables)
                     {
+                        byte[] tableName = isEncrypted || withEncryption ? Common.BikeyXorcize((byte[])table.Name.Clone(), Keys) : table.Name;
                         bw.Write(table.NumRows);
-                        bw.Write(table.Name);
+                        bw.Write(tableName);
 
                         // Write table rows
                         foreach (XsdTableRow row in table.RowCollection.Rows)
                         {
+                            byte[] rowName = isEncrypted || withEncryption ? Common.BikeyXorcize(row.Name, Keys) : row.Name;
                             bw.Write(row.ID);
                             bw.Write(row.Unknown);
                             bw.Write(row.NameLen);
-                            bw.Write(row.Name);
+                            bw.Write(rowName);
                         }
                     }
                 }
@@ -84,6 +99,9 @@ namespace NineDragons_XSD_Editor.Data
             {
                 return false;
             }
+
+            if (withEncryption)
+                isEncrypted = true;
 
             Path = path;
             return true;
@@ -98,6 +116,7 @@ namespace NineDragons_XSD_Editor.Data
                 return false;
 
             Path = path;
+            isEncrypted = false;
 
             using (BinaryReader br = new BinaryReader(File.Open(path, FileMode.Open)))
             {
@@ -128,6 +147,12 @@ namespace NineDragons_XSD_Editor.Data
                     tableRowCount = br.ReadInt32();
                     tableName = br.ReadBytes(XsdTable.NAME_MAXLEN);
 
+                    // String is XOR'd
+                    if (tableName.Length > 1 && tableName[1] == Keys[1])
+                    {
+                        isEncrypted = true;
+                        tableName = Common.BikeyXorcize(tableName, Keys);
+                    }
                     tableCollection.Add(tableRowCount, tableName);
 
                     // Read table rows
@@ -136,7 +161,10 @@ namespace NineDragons_XSD_Editor.Data
                         rowId = br.ReadInt32();
                         rowUnknown = br.ReadInt32();
                         rowNameLen = br.ReadInt32();
-                        rowName = br.ReadBytes(rowNameLen * 2); // They claim to use unicode, but use 2 bytes per character for all languages..
+                        rowName = br.ReadBytes(rowNameLen * 2); // 2 bytes per character
+
+                        if (isEncrypted)
+                            rowName = Common.BikeyXorcize(rowName, Keys);
 
                         tableCollection.Tables[tableIndex]
                             .RowCollection.Add(rowId, rowUnknown, rowNameLen, rowName);
@@ -192,6 +220,8 @@ namespace NineDragons_XSD_Editor.Data
         }
 
         public string Path { get; set; }
+        public byte[] Keys { get; set; }
+        public bool isEncrypted { get; set; }
 
         public enum MergeStatus { Success, Failure }
         public enum MergeType { MatchingOnly }
