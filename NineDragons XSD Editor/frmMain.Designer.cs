@@ -34,6 +34,9 @@ namespace NineDragons_XSD_Editor
             this.components = new System.ComponentModel.Container();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
+            this.contextMenuTable = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.contextMenuExport = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenuExportXML = new System.Windows.Forms.ToolStripMenuItem();
             this.flowSectionControls = new System.Windows.Forms.FlowLayoutPanel();
             this.btnAddTable = new System.Windows.Forms.Button();
             this.btnEditTable = new System.Windows.Forms.Button();
@@ -62,66 +65,89 @@ namespace NineDragons_XSD_Editor
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
-            this.contextMenuTable = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.contextMenuExport = new System.Windows.Forms.ToolStripMenuItem();
-            this.contextMenuExportXML = new System.Windows.Forms.ToolStripMenuItem();
+            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.setKeysToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.lstTable = new NineDragons_XSD_Editor.Components.ListBoxEx();
             this.dataTableRows = new NineDragons_XSD_Editor.Components.DataGridViewEx();
+            this.saveWithEncryptionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
+            this.contextMenuTable.SuspendLayout();
             this.flowSectionControls.SuspendLayout();
             this.busyTablePanel.SuspendLayout();
             this.layout.SuspendLayout();
             this.statusbar.SuspendLayout();
             this.toolbar.SuspendLayout();
             this.menu.SuspendLayout();
-            this.contextMenuTable.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataTableRows)).BeginInit();
             this.SuspendLayout();
-            //
+            // 
             // splitContainer1
-            //
+            // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer1.Location = new System.Drawing.Point(3, 27);
             this.splitContainer1.Name = "splitContainer1";
-            //
+            // 
             // splitContainer1.Panel1
-            //
+            // 
             this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
-            //
+            // 
             // splitContainer1.Panel2
-            //
+            // 
             this.splitContainer1.Panel2.Controls.Add(this.busyTablePanel);
             this.splitContainer1.Panel2.Controls.Add(this.dataTableRows);
             this.splitContainer1.Size = new System.Drawing.Size(738, 352);
             this.splitContainer1.SplitterDistance = 246;
             this.splitContainer1.TabIndex = 2;
-            //
+            // 
             // splitContainer2
-            //
+            // 
             this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer2.Location = new System.Drawing.Point(0, 0);
             this.splitContainer2.Margin = new System.Windows.Forms.Padding(0);
             this.splitContainer2.Name = "splitContainer2";
             this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            //
+            // 
             // splitContainer2.Panel1
-            //
+            // 
             this.splitContainer2.Panel1.Controls.Add(this.lstTable);
-            //
+            // 
             // splitContainer2.Panel2
-            //
+            // 
             this.splitContainer2.Panel2.Controls.Add(this.flowSectionControls);
             this.splitContainer2.Size = new System.Drawing.Size(246, 352);
             this.splitContainer2.SplitterDistance = 321;
             this.splitContainer2.TabIndex = 1;
-            //
+            // 
+            // contextMenuTable
+            // 
+            this.contextMenuTable.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.contextMenuExport});
+            this.contextMenuTable.Name = "contextMenuTable";
+            this.contextMenuTable.Size = new System.Drawing.Size(108, 26);
+            this.contextMenuTable.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuTable_Opening);
+            // 
+            // contextMenuExport
+            // 
+            this.contextMenuExport.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.contextMenuExportXML});
+            this.contextMenuExport.Name = "contextMenuExport";
+            this.contextMenuExport.Size = new System.Drawing.Size(107, 22);
+            this.contextMenuExport.Text = "Export";
+            // 
+            // contextMenuExportXML
+            // 
+            this.contextMenuExportXML.Name = "contextMenuExportXML";
+            this.contextMenuExportXML.Size = new System.Drawing.Size(98, 22);
+            this.contextMenuExportXML.Text = "XML";
+            this.contextMenuExportXML.Click += new System.EventHandler(this.contextMenuExportXML_Click);
+            // 
             // flowSectionControls
-            //
+            // 
             this.flowSectionControls.Controls.Add(this.btnAddTable);
             this.flowSectionControls.Controls.Add(this.btnEditTable);
             this.flowSectionControls.Controls.Add(this.btnDeleteTable);
@@ -131,9 +157,9 @@ namespace NineDragons_XSD_Editor
             this.flowSectionControls.Name = "flowSectionControls";
             this.flowSectionControls.Size = new System.Drawing.Size(246, 27);
             this.flowSectionControls.TabIndex = 0;
-            //
+            // 
             // btnAddTable
-            //
+            // 
             this.btnAddTable.Image = global::NineDragons_XSD_Editor.Properties.Resources.add;
             this.btnAddTable.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnAddTable.Location = new System.Drawing.Point(0, 0);
@@ -146,9 +172,9 @@ namespace NineDragons_XSD_Editor
             this.btnAddTable.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnAddTable.UseVisualStyleBackColor = true;
             this.btnAddTable.Click += new System.EventHandler(this.btnAddTable_Click);
-            //
+            // 
             // btnEditTable
-            //
+            // 
             this.btnEditTable.Enabled = false;
             this.btnEditTable.Image = global::NineDragons_XSD_Editor.Properties.Resources.edit;
             this.btnEditTable.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -161,9 +187,9 @@ namespace NineDragons_XSD_Editor
             this.btnEditTable.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnEditTable.UseVisualStyleBackColor = true;
             this.btnEditTable.Click += new System.EventHandler(this.btnEditTable_Click);
-            //
+            // 
             // btnDeleteTable
-            //
+            // 
             this.btnDeleteTable.Enabled = false;
             this.btnDeleteTable.Image = global::NineDragons_XSD_Editor.Properties.Resources.delete;
             this.btnDeleteTable.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -177,9 +203,9 @@ namespace NineDragons_XSD_Editor
             this.btnDeleteTable.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnDeleteTable.UseVisualStyleBackColor = true;
             this.btnDeleteTable.Click += new System.EventHandler(this.btnDeleteTable_Click);
-            //
+            // 
             // busyTablePanel
-            //
+            // 
             this.busyTablePanel.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.busyTablePanel.BackColor = System.Drawing.SystemColors.Control;
             this.busyTablePanel.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
@@ -193,18 +219,18 @@ namespace NineDragons_XSD_Editor
             this.busyTablePanel.TabIndex = 7;
             this.busyTablePanel.Visible = false;
             this.busyTablePanel.VisibleChanged += new System.EventHandler(this.busyTablePanel_VisibleChanged);
-            //
+            // 
             // progressIndicator
-            //
+            // 
             this.progressIndicator.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.progressIndicator.Location = new System.Drawing.Point(3, 2);
             this.progressIndicator.Name = "progressIndicator";
             this.progressIndicator.Size = new System.Drawing.Size(32, 32);
             this.progressIndicator.TabIndex = 2;
             this.progressIndicator.Text = "progressIndicator";
-            //
+            // 
             // labelBusyStatus
-            //
+            // 
             this.labelBusyStatus.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.labelBusyStatus.Font = new System.Drawing.Font("Trebuchet MS", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.labelBusyStatus.Location = new System.Drawing.Point(49, 10);
@@ -212,9 +238,9 @@ namespace NineDragons_XSD_Editor
             this.labelBusyStatus.Size = new System.Drawing.Size(126, 18);
             this.labelBusyStatus.TabIndex = 3;
             this.labelBusyStatus.Text = "Please wait...";
-            //
+            // 
             // btnCancelBusy
-            //
+            // 
             this.btnCancelBusy.BackColor = System.Drawing.SystemColors.Control;
             this.btnCancelBusy.Image = global::NineDragons_XSD_Editor.Properties.Resources.delete;
             this.btnCancelBusy.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -226,9 +252,9 @@ namespace NineDragons_XSD_Editor
             this.btnCancelBusy.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnCancelBusy.UseVisualStyleBackColor = false;
             this.btnCancelBusy.Click += new System.EventHandler(this.btnCancelBusy_Click);
-            //
+            // 
             // layout
-            //
+            // 
             this.layout.ColumnCount = 1;
             this.layout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layout.Controls.Add(this.statusbar, 0, 2);
@@ -244,9 +270,9 @@ namespace NineDragons_XSD_Editor
             this.layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
             this.layout.Size = new System.Drawing.Size(744, 406);
             this.layout.TabIndex = 3;
-            //
+            // 
             // statusbar
-            //
+            // 
             this.statusbar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.statusbar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toollblNumTable,
@@ -256,19 +282,19 @@ namespace NineDragons_XSD_Editor
             this.statusbar.Size = new System.Drawing.Size(744, 24);
             this.statusbar.TabIndex = 4;
             this.statusbar.Text = "statusStrip1";
-            //
+            // 
             // toollblNumTable
-            //
+            // 
             this.toollblNumTable.Name = "toollblNumTable";
             this.toollblNumTable.Size = new System.Drawing.Size(0, 19);
-            //
+            // 
             // toollblNumRow
-            //
+            // 
             this.toollblNumRow.Name = "toollblNumRow";
             this.toollblNumRow.Size = new System.Drawing.Size(0, 19);
-            //
+            // 
             // toolbar
-            //
+            // 
             this.toolbar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.toolbar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolbtnOpen,
@@ -280,18 +306,18 @@ namespace NineDragons_XSD_Editor
             this.toolbar.Size = new System.Drawing.Size(744, 24);
             this.toolbar.TabIndex = 3;
             this.toolbar.Text = "toolStrip1";
-            //
+            // 
             // toolbtnOpen
-            //
+            // 
             this.toolbtnOpen.Image = global::NineDragons_XSD_Editor.Properties.Resources.fileopen;
             this.toolbtnOpen.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolbtnOpen.Name = "toolbtnOpen";
             this.toolbtnOpen.Size = new System.Drawing.Size(65, 21);
             this.toolbtnOpen.Text = "Open...";
             this.toolbtnOpen.Click += new System.EventHandler(this.toolbtnOpen_Click);
-            //
+            // 
             // toolbtnSave
-            //
+            // 
             this.toolbtnSave.Enabled = false;
             this.toolbtnSave.Image = global::NineDragons_XSD_Editor.Properties.Resources.save;
             this.toolbtnSave.ImageTransparentColor = System.Drawing.Color.Magenta;
@@ -299,14 +325,14 @@ namespace NineDragons_XSD_Editor
             this.toolbtnSave.Size = new System.Drawing.Size(51, 21);
             this.toolbtnSave.Text = "Save";
             this.toolbtnSave.Click += new System.EventHandler(this.toolbtnSave_Click);
-            //
+            // 
             // toolStripSeparator1
-            //
+            // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 24);
-            //
+            // 
             // toolbtnMerge
-            //
+            // 
             this.toolbtnMerge.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.matchingOnlyToolStripMenuItem});
             this.toolbtnMerge.Enabled = false;
@@ -315,124 +341,118 @@ namespace NineDragons_XSD_Editor
             this.toolbtnMerge.Name = "toolbtnMerge";
             this.toolbtnMerge.Size = new System.Drawing.Size(70, 21);
             this.toolbtnMerge.Text = "Merge";
-            //
+            // 
             // matchingOnlyToolStripMenuItem
-            //
+            // 
             this.matchingOnlyToolStripMenuItem.Name = "matchingOnlyToolStripMenuItem";
             this.matchingOnlyToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.matchingOnlyToolStripMenuItem.Text = "Matching Only...";
             this.matchingOnlyToolStripMenuItem.Click += new System.EventHandler(this.matchingOnlyToolStripMenuItem_Click);
-            //
+            // 
             // menu
-            //
+            // 
             this.menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
+            this.editToolStripMenuItem,
             this.helpToolStripMenuItem});
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Size = new System.Drawing.Size(744, 24);
             this.menu.TabIndex = 4;
             this.menu.Text = "menuStrip1";
-            //
+            // 
             // fileToolStripMenuItem
-            //
+            // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.openToolStripMenuItem,
             this.saveToolStripMenuItem,
             this.saveAsToolStripMenuItem,
+            this.saveWithEncryptionToolStripMenuItem,
             this.toolStripSeparator2,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "&File";
-            //
+            // 
             // openToolStripMenuItem
-            //
+            // 
             this.openToolStripMenuItem.Image = global::NineDragons_XSD_Editor.Properties.Resources.fileopen;
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.openToolStripMenuItem.Text = "Open...";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
-            //
+            // 
             // saveToolStripMenuItem
-            //
+            // 
             this.saveToolStripMenuItem.Enabled = false;
             this.saveToolStripMenuItem.Image = global::NineDragons_XSD_Editor.Properties.Resources.save;
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
-            //
+            // 
             // saveAsToolStripMenuItem
-            //
+            // 
             this.saveAsToolStripMenuItem.Enabled = false;
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
-            //
+            // 
             // toolStripSeparator2
-            //
+            // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(152, 6);
-            //
+            this.toolStripSeparator2.Size = new System.Drawing.Size(181, 6);
+            // 
             // exitToolStripMenuItem
-            //
+            // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
-            //
+            // 
             // helpToolStripMenuItem
-            //
+            // 
             this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.aboutToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "Help";
-            //
+            // 
             // aboutToolStripMenuItem
-            //
+            // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F1;
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(126, 22);
             this.aboutToolStripMenuItem.Text = "About";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
-            //
+            // 
             // backgroundWorker
-            //
+            // 
             this.backgroundWorker.WorkerSupportsCancellation = true;
             this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
             this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_RunWorkerCompleted);
-            //
-            // contextMenuTable
-            //
-            this.contextMenuTable.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.contextMenuExport});
-            this.contextMenuTable.Name = "contextMenuTable";
-            this.contextMenuTable.Size = new System.Drawing.Size(153, 48);
-            this.contextMenuTable.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuTable_Opening);
-            //
-            // contextMenuExport
-            //
-            this.contextMenuExport.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.contextMenuExportXML});
-            this.contextMenuExport.Name = "contextMenuExport";
-            this.contextMenuExport.Size = new System.Drawing.Size(152, 22);
-            this.contextMenuExport.Text = "Export";
-            //
-            // contextMenuExportXML
-            //
-            this.contextMenuExportXML.Name = "contextMenuExportXML";
-            this.contextMenuExportXML.Size = new System.Drawing.Size(152, 22);
-            this.contextMenuExportXML.Text = "XML";
-            this.contextMenuExportXML.Click += new System.EventHandler(this.contextMenuExportXML_Click);
-            //
+            // 
+            // editToolStripMenuItem
+            // 
+            this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.setKeysToolStripMenuItem});
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
+            this.editToolStripMenuItem.Text = "Edit";
+            // 
+            // setKeysToolStripMenuItem
+            // 
+            this.setKeysToolStripMenuItem.Name = "setKeysToolStripMenuItem";
+            this.setKeysToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.setKeysToolStripMenuItem.Text = "Set Cipher Keys";
+            this.setKeysToolStripMenuItem.Click += new System.EventHandler(this.setKeysToolStripMenuItem_Click);
+            // 
             // lstTable
-            //
+            // 
             this.lstTable.ContextMenuStrip = this.contextMenuTable;
             this.lstTable.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lstTable.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
@@ -444,9 +464,9 @@ namespace NineDragons_XSD_Editor
             this.lstTable.Size = new System.Drawing.Size(246, 321);
             this.lstTable.TabIndex = 0;
             this.lstTable.SelectedIndexChanged += new System.EventHandler(this.lstTable_SelectedIndexChanged);
-            //
+            // 
             // dataTableRows
-            //
+            // 
             this.dataTableRows.BackgroundColor = System.Drawing.SystemColors.Window;
             this.dataTableRows.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataTableRows.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -459,9 +479,16 @@ namespace NineDragons_XSD_Editor
             this.dataTableRows.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataTableRows_CellFormatting);
             this.dataTableRows.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.dataTableRows_CellParsing);
             this.dataTableRows.CellValidating += new System.Windows.Forms.DataGridViewCellValidatingEventHandler(this.dataTableRows_CellValidating);
-            //
+            // 
+            // saveWithEncryptionToolStripMenuItem
+            // 
+            this.saveWithEncryptionToolStripMenuItem.Name = "saveWithEncryptionToolStripMenuItem";
+            this.saveWithEncryptionToolStripMenuItem.Size = new System.Drawing.Size(184, 22);
+            this.saveWithEncryptionToolStripMenuItem.Text = "Save with Encryption";
+            this.saveWithEncryptionToolStripMenuItem.Click += new System.EventHandler(this.saveWithEncryptionToolStripMenuItem_Click);
+            // 
             // frmMain
-            //
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(744, 430);
@@ -478,6 +505,7 @@ namespace NineDragons_XSD_Editor
             this.splitContainer2.Panel1.ResumeLayout(false);
             this.splitContainer2.Panel2.ResumeLayout(false);
             this.splitContainer2.ResumeLayout(false);
+            this.contextMenuTable.ResumeLayout(false);
             this.flowSectionControls.ResumeLayout(false);
             this.busyTablePanel.ResumeLayout(false);
             this.layout.ResumeLayout(false);
@@ -488,7 +516,6 @@ namespace NineDragons_XSD_Editor
             this.toolbar.PerformLayout();
             this.menu.ResumeLayout(false);
             this.menu.PerformLayout();
-            this.contextMenuTable.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataTableRows)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -532,6 +559,9 @@ namespace NineDragons_XSD_Editor
         private System.Windows.Forms.ContextMenuStrip contextMenuTable;
         private System.Windows.Forms.ToolStripMenuItem contextMenuExport;
         private System.Windows.Forms.ToolStripMenuItem contextMenuExportXML;
+        private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem setKeysToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveWithEncryptionToolStripMenuItem;
     }
 }
 
