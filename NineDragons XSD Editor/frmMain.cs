@@ -23,6 +23,7 @@ namespace NineDragons_XSD_Editor
         private string baseTitle = "9Dragons XSD Editor";
         private string baseFilename = "Untitled";
         private bool isModified = false;
+        private byte[] keys = new byte[] { 0x17, 0x08 };
 
         public frmMain()
         {
@@ -60,7 +61,7 @@ namespace NineDragons_XSD_Editor
 
         private void newXsd()
         {
-            xsd.Insert(0, new Xsd());
+            xsd.Insert(0, new Xsd(keys));
             lstTable.DataSource = xsd[0].tableCollection.Tables;
             lstTable.DisplayMember = "UnicodeName";
             lstTable.ItemImage = global::NineDragons_XSD_Editor.Properties.Resources.table;
@@ -184,7 +185,7 @@ namespace NineDragons_XSD_Editor
                 return false;
 
             xsd.Clear();
-            xsd.Insert(0, (new Xsd(filename)));
+            xsd.Insert(0, (new Xsd(filename, keys)));
             if (false == xsd[0].load())
                 return false;
             lstTable.DataSource = xsd[0].tableCollection.Tables;
@@ -203,7 +204,10 @@ namespace NineDragons_XSD_Editor
 
             dataTableRows.Enabled = true;
 
-            this.Text = String.Format("{0} - {1}", xsd[0].Path, baseTitle);
+            this.Text = String.Format("{0}{1} - {2}", 
+                xsd[0].Path, 
+                xsd[0].isEncrypted ? " [Encrypted]" : "", 
+                baseTitle);
             return true;
         }
 
@@ -219,7 +223,7 @@ namespace NineDragons_XSD_Editor
                 return false;
             }
 
-            xsd.Insert(1, (new Xsd(filename)));
+            xsd.Insert(1, (new Xsd(filename, keys)));
             return xsd[1].load();
         }
 
@@ -248,14 +252,17 @@ namespace NineDragons_XSD_Editor
 
             if (result)
             {
-                this.Text = String.Format("{0} - {1}", xsd[0].Path, baseTitle);
+                this.Text = String.Format("{0}{1} - {2}",
+                    xsd[0].Path,
+                    xsd[0].isEncrypted ? " [Encrypted]" : "",
+                    baseTitle);
                 isModified = false;
             }
 
             return result;
         }
 
-        private bool SaveXsdAs()
+        private bool SaveXsdAs(bool withEncryption = false)
         {
             bool result = false;
             SaveFileDialog dialog = new SaveFileDialog();
@@ -264,11 +271,14 @@ namespace NineDragons_XSD_Editor
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                result = xsd[0].write(dialog.FileName);
+                result = xsd[0].write(dialog.FileName, withEncryption);
 
                 if (result)
                 {
-                    this.Text = String.Format("{0} - {1}", xsd[0].Path, baseTitle);
+                    this.Text = String.Format("{0}{1} - {2}",
+                        xsd[0].Path,
+                        xsd[0].isEncrypted ? " [Encrypted]" : "",
+                        baseTitle);
                     isModified = false;
                 }
             }
@@ -292,6 +302,12 @@ namespace NineDragons_XSD_Editor
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SaveXsdAs();
+        }
+
+        private void saveWithEncryptionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bool withEncryption = true;
+            SaveXsdAs(withEncryption);
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -565,6 +581,74 @@ namespace NineDragons_XSD_Editor
         private void contextMenuTable_Opening(object sender, CancelEventArgs e)
         {
             contextMenuTable.Enabled = (lstTable.SelectedIndex < 0 ? false : true);
+        }
+
+        private static DialogResult SetKeysDialog(ref byte[] keys)
+        {
+            System.Drawing.Size size = new System.Drawing.Size(175, 95);
+            Form inputBox = new Form();
+
+            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            inputBox.ClientSize = size;
+            inputBox.Text = "Set Cipher Keys";
+
+            System.Windows.Forms.Label label1 = new Label();
+            label1.Size = new System.Drawing.Size(80, 23);
+            label1.Location = new System.Drawing.Point(10, 10);
+            label1.Text = "Cipher Key 1:";
+            inputBox.Controls.Add(label1);
+
+            System.Windows.Forms.TextBox key1 = new TextBox();
+            key1.Size = new System.Drawing.Size(75, 23);
+            key1.Location = new System.Drawing.Point(90, 7);
+            key1.MaxLength = 2;
+            key1.TextAlign = HorizontalAlignment.Center;
+            key1.Text = keys[0].ToString("X2");
+            inputBox.Controls.Add(key1);
+
+            System.Windows.Forms.Label label2 = new Label();
+            label2.Size = new System.Drawing.Size(80, 23);
+            label2.Location = new System.Drawing.Point(10, 37);
+            label2.Text = "Cipher Key 2:";
+            inputBox.Controls.Add(label2);
+
+            System.Windows.Forms.TextBox key2 = new TextBox();
+            key2.Size = new System.Drawing.Size(75, 23);
+            key2.Location = new System.Drawing.Point(90, 34);
+            key2.MaxLength = 2;
+            key2.TextAlign = HorizontalAlignment.Center;
+            key2.Text = keys[1].ToString("X2");
+            inputBox.Controls.Add(key2);
+
+            Button okButton = new Button();
+            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            okButton.Name = "okButton";
+            okButton.Size = new System.Drawing.Size(75, 26);
+            okButton.Text = "&OK";
+            okButton.Location = new System.Drawing.Point(10, 62);
+            inputBox.Controls.Add(okButton);
+
+            Button cancelButton = new Button();
+            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            cancelButton.Name = "cancelButton";
+            cancelButton.Size = new System.Drawing.Size(75, 26);
+            cancelButton.Text = "&Cancel";
+            cancelButton.Location = new System.Drawing.Point(90, 62);
+            inputBox.Controls.Add(cancelButton);
+
+            DialogResult result = inputBox.ShowDialog();
+
+            if (!String.IsNullOrEmpty(key1.Text))
+                keys[0] = Convert.ToByte(key1.Text, 16);
+            if (!String.IsNullOrEmpty(key2.Text))
+                keys[1] = Convert.ToByte(key2.Text, 16);
+
+            return result;
+        }
+
+        private void setKeysToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SetKeysDialog(ref keys);
         }
     }
 }
