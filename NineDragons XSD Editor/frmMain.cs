@@ -24,6 +24,9 @@ namespace NineDragons_XSD_Editor
         private string baseFilename = "Untitled";
         private bool isModified = false;
         private byte[] keys = new byte[] { 0x17, 0x08 };
+        private string findText = "";
+        private int findTableIndex = 0;
+        private int findRowIndex = 0;
 
         public frmMain()
         {
@@ -121,6 +124,7 @@ namespace NineDragons_XSD_Editor
             {
                 XsdTable table = (XsdTable)lstTable.SelectedItem;
                 dataTableRows.DataSource = table.RowCollection.Rows;
+                findTableIndex = lstTable.SelectedIndex;
                 updateStatus();
                 btnEditTable.Enabled = true;
                 btnDeleteTable.Enabled = true;
@@ -396,6 +400,69 @@ namespace NineDragons_XSD_Editor
             updateStatus();
         }
 
+        private void Validate_Find(object sender, InputBoxValidatingArgs e)
+        {
+            string text = e.Text.Trim();
+            if (text.Length == 0)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            Find(text);
+        }
+
+        private bool Find(string text, int tableIndex = 0, int rowIndex = 0)
+        {
+            var bFound = false;
+
+            if (xsd[0].tableCollection.Tables.Count < 1)
+                return bFound;
+
+            text = text.Trim();
+            if (text.Length == 0)
+                return bFound;
+
+            findText = text;
+            findTableIndex = tableIndex;
+            findRowIndex = rowIndex;
+
+            if (findTableIndex > xsd[0].tableCollection.Tables.Count)
+                findTableIndex = 0;
+
+            if (findRowIndex > xsd[0].tableCollection.Tables[findTableIndex].RowCollection.Rows.Count)
+                findRowIndex = 0;
+
+            for (int i = findTableIndex; i < xsd[0].tableCollection.Tables.Count; i++)
+            {
+                var table = xsd[0].tableCollection.Tables[i];
+                for (int j = findRowIndex; j < table.RowCollection.Rows.Count; j++)
+                {
+                    var row = table.RowCollection.Rows[j];
+                    string name = Encoding.Unicode.GetString(row.Name);
+
+                    if (name.Contains(text))
+                    {
+                        lstTable.SelectedIndex = i;
+                        dataTableRows.ClearSelection();
+                        dataTableRows.CurrentCell = null;
+                        dataTableRows.Rows[j].Selected = true;
+                        dataTableRows.FirstDisplayedScrollingRowIndex = j;
+                        bFound = true;
+                        findTableIndex = i;
+                        findRowIndex = j;
+                        return bFound;
+                    }
+                }
+            }
+
+            findTableIndex = 0;
+            findRowIndex = 0;
+
+            return bFound;
+        }
+
+
         private void btnEditTable_Click(object sender, EventArgs e)
         {
             if (null != lstTable.SelectedItem)
@@ -649,6 +716,21 @@ namespace NineDragons_XSD_Editor
         private void setKeysToolStripMenuItem_Click(object sender, EventArgs e)
         {
             SetKeysDialog(ref keys);
+        }
+
+        private void toolbtnFind_Click(object sender, EventArgs e)
+        {
+            InputBoxResult result = InputBox.Show("Name:", "Find", "", new InputBoxValidatingHandler(Validate_Find));
+        }
+
+        private void findToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            InputBoxResult result = InputBox.Show("Name:", "Find", "", new InputBoxValidatingHandler(Validate_Find));
+        }
+
+        private void findNextToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Find(findText, findTableIndex, findRowIndex+1);
         }
     }
 }
