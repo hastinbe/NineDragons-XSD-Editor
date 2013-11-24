@@ -52,6 +52,24 @@
     <Compile Include="Components\ListBoxEx.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="UI\FindWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FindWindow.Designer.cs">
+      <DependentUpon>FindWindow.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\InputKeyDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\InputKeyDialog.Designer.cs">
+      <DependentUpon>InputKeyDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\ReplaceWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ReplaceWindow.Designer.cs">
+      <DependentUpon>ReplaceWindow.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -66,12 +84,6 @@
     <Compile Include="UI\InputBox.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Data\Xsd.cs" />
-    <Compile Include="Data\XsdHeader.cs" />
-    <Compile Include="Data\XsdTable.cs" />
-    <Compile Include="Data\XsdTableCollection.cs" />
-    <Compile Include="Data\XsdTableRow.cs" />
-    <Compile Include="Data\XsdTableRowCollection.cs" />
     <Compile Include="frmMain.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,20 +92,30 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\Common.cs" />
+    <Compile Include="Utils\Common.cs" />
     <EmbeddedResource Include="UI\AboutWindow.resx">
       <DependentUpon>AboutWindow.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\FindWindow.resx">
+      <DependentUpon>FindWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\InputBox.resx">
       <DependentUpon>InputBox.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="frmMain.resx">
       <DependentUpon>frmMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\InputKeyDialog.resx">
+      <DependentUpon>InputKeyDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\ReplaceWindow.resx">
+      <DependentUpon>ReplaceWindow.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Properties\Settings.settings">
@@ -107,34 +129,41 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="save.png" />
+    <None Include="Assets\save.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="section.png" />
+    <None Include="Assets\section.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="merge.png" />
+    <None Include="Assets\merge.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="fileopen.png" />
+    <None Include="Assets\fileopen.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="add.png" />
+    <None Include="Assets\add.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="delete.png" />
+    <None Include="Assets\delete.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="edit.png" />
+    <None Include="Assets\edit.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="NineDragons\NineDragons.csproj">
+      <Project>{14CA7B86-CA3E-4C46-AE49-26913FB4BC9D}</Project>
+      <Name>NineDragons</Name>
+    </ProjectReference>
     <ProjectReference Include="ProgressIndicator\ProgressIndicator.csproj">
       <Project>{F7FE2CE9-344C-4B46-8B04-083D68FE1C16}</Project>
       <Name>ProgressIndicator</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\find.png" />
+    <None Include="Assets\find.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\key.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

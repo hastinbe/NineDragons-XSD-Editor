@@ -7,13 +7,13 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Data;
 using System.Diagnostics;
-using System.Windows.Forms;
-using NineDragons_XSD_Editor.Components;
-using NineDragons_XSD_Editor.Data;
-using NineDragons_XSD_Editor.UI;
-using NineDragons_XSD_Editor.Utilities;
+using System.IO;
 using System.Text;
+using System.Windows.Forms;
 using System.Xml;
+using NineDragons_XSD_Editor.Components;
+using NineDragons_XSD_Editor.UI;
+using NineDragons.XStringDatabase;
 
 namespace NineDragons_XSD_Editor
 {
@@ -24,9 +24,14 @@ namespace NineDragons_XSD_Editor
         private string baseFilename = "Untitled";
         private bool isModified = false;
         private byte[] keys = new byte[] { 0x17, 0x08 };
-        private string findText = "";
-        private int findTableIndex = 0;
-        private int findRowIndex = 0;
+        public string findText = "";
+        public string lastfindText = "";
+        public int findSectionIndex = 0;
+        public int findRowIndex = 0;
+        public int findColumnIndex = 0;
+
+        private BackgroundWorker loadWorker;
+        private BackgroundWorker mergeWorker;
 
         public frmMain()
         {
@@ -36,56 +41,80 @@ namespace NineDragons_XSD_Editor
 
         private void initialize()
         {
-            initializeGrid();
-            newXsd();
-        }
-
-        private void initializeGrid()
-        {
-            // Double buffering
             typeof(DataGridView).InvokeMember("DoubleBuffered",
                 BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.SetProperty,
-                null, dataTableRows, new object[] { true });
+                null, dataSectionRows, new object[] { true });
 
-            dataTableRows.AutoGenerateColumns = false;
-            dataTableRows.Columns.AddRange(new DataGridViewColumn[] {
-                new DataGridViewTextBoxColumn {
-                    DataPropertyName = "ID",
-                    HeaderText = "ID",
-                    AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells
-                },
-                new DataGridViewTextBoxColumn {
-                    DataPropertyName = "Name",
-                    HeaderText = "Name",
-                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
-                }
+            dataSectionRows.AutoGenerateColumns = false;
+        }
+
+        private void setupGrid()
+        {
+            dataSectionRows.Columns.Clear();
+            dataSectionRows.Columns.Add(new DataGridViewTextBoxColumn {
+                DataPropertyName = "ResourceIndex",
+                HeaderText = "ID",
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells
             });
+
+            for (int i = 0; i < xsd[0].languages.Length; i++)
+            {
+                dataSectionRows.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = "TextString",
+                    HeaderText = xsd[0].languages[i].Value,
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
+                    Resizable = DataGridViewTriState.True
+                });
+            }
+        }
+
+        private void XsdFileLoaded(object sender, EventArgs e)
+        {
+            setupGrid();
         }
 
         private void newXsd()
         {
-            xsd.Insert(0, new Xsd(keys));
-            lstTable.DataSource = xsd[0].tableCollection.Tables;
-            lstTable.DisplayMember = "UnicodeName";
-            lstTable.ItemImage = global::NineDragons_XSD_Editor.Properties.Resources.table;
-            xsd[0].tableCollection.Tables.ListChanged
-                += new ListChangedEventHandler(Tables_ListChanged);
+            xsd.Insert(0, new XsdFile(baseFilename, keys));
+            xsd[0].version = (int)Xsd.Version.Separated;
+            xsd[0].header = Xsd.ValidHeaders[0];
 
-            dataTableRows.Enabled = false;
-            btnDeleteTable.Enabled = false;
-            btnEditTable.Enabled = false;
+            lstSection.DataSource = xsd[0].sectionCollection.Sections;
+            lstSection.DisplayMember = "UnicodeName";
+            lstSection.ItemImage = global::NineDragons_XSD_Editor.Properties.Resources.section;
+
+            xsd[0].sectionCollection.Sections.ListChanged
+                += new ListChangedEventHandler(Sections_ListChanged);
+            xsd[0].Loaded += new LoadedEventHandler(XsdFileLoaded);
+
+            dataSectionRows.Enabled = false;
+            btnAddSection.Enabled = false;
+            btnEditSection.Enabled = false;
+            btnDeleteSection.Enabled = false;
+
+            // Update toolbar
             toolbtnSave.Enabled = false;
             toolbtnMerge.Enabled = false;
+            toolbtnFind.Enabled = false;
+
+            // Update menu
             saveToolStripMenuItem.Enabled = false;
             saveAsToolStripMenuItem.Enabled = false;
+            saveWithEncryptionToolStripMenuItem.Enabled = false;
+            findToolStripMenuItem1.Enabled = false;
+            findNextToolStripMenuItem.Enabled = false;
+            replaceToolStripMenuItem.Enabled = false;
 
             this.Text = String.Format("{0} - {1}", baseFilename, baseTitle);
+
             updateStatus();
         }
 
-        private void Tables_ListChanged(object sender, ListChangedEventArgs e)
+        private void Sections_ListChanged(object sender, ListChangedEventArgs e)
         {
-            if (lstTable.Items.Count < 1)
+            Debug.WriteLine("Sections_ListChanged");
+            if (lstSection.Items.Count < 1)
             {
                 newXsd();
                 return;
@@ -94,141 +123,148 @@ namespace NineDragons_XSD_Editor
             if (!isModified)
                 this.Text = this.Text.Insert(0, "*");
 
-            dataTableRows.Enabled = true;
-            btnDeleteTable.Enabled = true;
-            btnEditTable.Enabled = true;
+            dataSectionRows.Enabled = true;
+            btnAddSection.Enabled = true;
+            btnEditSection.Enabled = true;
+            btnDeleteSection.Enabled = true;
+
+            // Update toolbar
             toolbtnSave.Enabled = true;
             toolbtnMerge.Enabled = true;
+            toolbtnFind.Enabled = true;
+            
+            // Update menu
             saveToolStripMenuItem.Enabled = true;
             saveAsToolStripMenuItem.Enabled = true;
+            saveWithEncryptionToolStripMenuItem.Enabled = true;
+            findToolStripMenuItem1.Enabled = true;
+            findNextToolStripMenuItem.Enabled = true;
+            replaceToolStripMenuItem.Enabled = true;
 
             isModified = true;
         }
 
         private void updateStatus()
         {
-            toollblNumTable.Text = String.Format("{0} tables", xsd[0].header.NumTables);
+            toollblNumSection.Text = String.Format("{0} sections", xsd[0].totalSectionCount);
 
-            if (null != lstTable.SelectedItem)
+            if (null != lstSection.SelectedItem)
             {
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                toollblNumRow.Text = String.Format("{0} rows", table.NumRows);
+                Section section = (Section)lstSection.SelectedItem;
+                toollblNumRow.Text = String.Format("{0} rows", section.XStringCount);
             }
 
-            lstTable.Refresh();
+            lstSection.Refresh();
         }
 
-        private void lstTable_SelectedIndexChanged(object sender, EventArgs e)
+        private void lstSection_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (null != lstTable.SelectedItem)
+            if (null != lstSection.SelectedItem)
             {
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                dataTableRows.DataSource = table.RowCollection.Rows;
-                findTableIndex = lstTable.SelectedIndex;
+                Section section = (Section)lstSection.SelectedItem;
+                dataSectionRows.DataSource = section.XStrings.Rows;
+                findSectionIndex = lstSection.SelectedIndex;
                 updateStatus();
-                btnEditTable.Enabled = true;
-                btnDeleteTable.Enabled = true;
+                btnAddSection.Enabled = true;
+                btnEditSection.Enabled = true;
+                btnDeleteSection.Enabled = true;
             }
             else
             {
-                btnEditTable.Enabled = false;
-                btnDeleteTable.Enabled = false;
+                btnAddSection.Enabled = false;
+                btnEditSection.Enabled = false;
+                btnDeleteSection.Enabled = false;
             }
         }
 
-        private void dataTableRows_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        private void dataSectionRows_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
-            dataTableRows.Rows[e.RowIndex].ErrorText = String.Empty;
+            dataSectionRows.Rows[e.RowIndex].ErrorText = String.Empty;
         }
 
-        private void dataTableRows_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        private void dataSectionRows_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (e.ColumnIndex != 1 || e.Value == null) return;
+            if (e.ColumnIndex < 1 || e.Value == null) return;
 
-            byte[] rowName = (byte[])e.Value;
+            List<byte[]> textStrings = (List<byte[]>)e.Value;
+            if (e.ColumnIndex > textStrings.Count)
+            {
+                e.Value = String.Empty;
+                e.FormattingApplied = true;
+                return;
+            }
+
+            byte[] rowName = textStrings[e.ColumnIndex - 1];
 
             e.Value = (rowName != null && rowName.Length > 1)
                 ? Encoding.Unicode.GetString(rowName)
                 : String.Empty;
+            e.FormattingApplied = true;
         }
 
-        private void dataTableRows_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
+        private void dataSectionRows_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
         {
-            if (e.ColumnIndex != 1) return;
-
-            // Convert edited table row name into a byte array
+            if (e.ColumnIndex < 1) return;
             if (e.Value.GetType() == typeof(String))
             {
-                e.Value = Encoding.Unicode.GetBytes(e.Value.ToString());
+                var index = e.ColumnIndex - 1;
+                var text = e.Value.ToString();
+                var section = xsd[0].sectionCollection.Sections[lstSection.SelectedIndex];
+                var row = section.XStrings.Rows[e.RowIndex];
+                var btext = Encoding.Unicode.GetBytes(text);
+
+                // Add all language textstrings for this row
+                if (row.TextString.Count <= index)
+                    for (int i = row.TextString.Count; i < xsd[0].MaxLanguages; i++)
+                        row.TextString.Add(new byte[0]);
+
+                // Add all language textstring lengths for this row
+                if (row.TextStringLength.Count <= index)
+                    for (int i = row.TextStringLength.Count; i < xsd[0].MaxLanguages; i++)
+                        row.TextStringLength.Add(Encoding.Unicode.GetString(row.TextString[i]).Length);
+
+                row.TextString[index] = btext;
+                row.TextStringLength[index] = text.Length;
+
+                e.Value = row.TextString;
                 e.ParsingApplied = true;
                 updateStatus();
             }
         }
 
-        private void dataTableRows_CellValidating(object sender, DataGridViewCellValidatingEventArgs e)
-        {
-            //if (e.ColumnIndex != 1) return;
-            //if (e.RowIndex == this.dataTableRows.RowCount - 1) return;
-
-            /*
-            if (string.IsNullOrEmpty(e.FormattedValue.ToString()))
-            {
-                if (e.ColumnIndex == 0)
-                    dataTableRows.Rows[e.RowIndex].ErrorText = "ID field cannot be empty. Press ESC to cancel";
-                else if (e.ColumnIndex == 1)
-                    dataTableRows.Rows[e.RowIndex].ErrorText = "Name field cannot be empty. Press ESC to cancel";
-                e.Cancel = true;
-            }
-            */
-        }
-
-        private bool OpenFirstXsd()
+        private bool OpenXsd(int xsdIndex)
         {
             string filename = OpenXsdDialog();
             if (filename == string.Empty)
                 return false;
 
-            xsd.Clear();
-            xsd.Insert(0, (new Xsd(filename, keys)));
-            if (false == xsd[0].load())
-                return false;
-            lstTable.DataSource = xsd[0].tableCollection.Tables;
-            lstTable.DisplayMember = "UnicodeName";
+            if (xsdIndex == 0)
+                xsd.Clear();
 
-            // Update statusbar
-            updateStatus();
+            if (xsdIndex > 0 && !(xsd[0] is Xsd))
+                MessageBox.Show("Cannot open additional XSDs. Try loading an XSD.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-            // Update menu
-            saveToolStripMenuItem.Enabled = true;
-            saveAsToolStripMenuItem.Enabled = true;
+            xsd.Insert(xsdIndex, (new XsdFile(filename, keys)));
 
-            // Update toolbar
-            toolbtnSave.Enabled = true;
-            toolbtnMerge.Enabled = true;
+            if (xsdIndex == 0)
+            {
+                loadWorker = new BackgroundWorker();
+                loadWorker.WorkerSupportsCancellation = true;
+                loadWorker.DoWork += new DoWorkEventHandler(this.LoadWorker_DoWork);
+                loadWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(this.LoadWorker_RunWorkerCompleted);
+                busySectionPanel.Visible = true;
 
-            dataTableRows.Enabled = true;
+                if (loadWorker.IsBusy && loadWorker.WorkerSupportsCancellation)
+                    loadWorker.CancelAsync();
+                else
+                    loadWorker.RunWorkerAsync(xsdIndex);
+            }
+            else
+            {
+                xsd[xsdIndex].load();
+            }
 
-            this.Text = String.Format("{0}{1} - {2}", 
-                xsd[0].Path, 
-                xsd[0].isEncrypted ? " [Encrypted]" : "", 
-                baseTitle);
             return true;
-        }
-
-        private bool OpenSecondXsd()
-        {
-            string filename = OpenXsdDialog();
-            if (filename == string.Empty)
-                return false;
-
-            if (!(xsd[0] is Xsd))
-            {
-                MessageBox.Show("Cannot open file because you have not loaded an XSD first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-
-            xsd.Insert(1, (new Xsd(filename, keys)));
-            return xsd[1].load();
         }
 
         private string OpenXsdDialog()
@@ -239,65 +275,70 @@ namespace NineDragons_XSD_Editor
             return dialog.ShowDialog() == DialogResult.OK ? dialog.FileName : string.Empty;
         }
 
-        private bool SaveXsd()
+        private void SaveXsd()
         {
-            if (false == System.IO.File.Exists(xsd[0].Path))
+            if (false == File.Exists(xsd[0].Filename))
             {
-                DialogResult dResult = MessageBox.Show("The file '" + xsd[0].Path + "' no longer exists. Save to this file anyway?", "Save", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
+                DialogResult dResult = 
+                    MessageBox.Show("The file '" + xsd[0].Filename + "' no longer exists. Save to this file anyway?", "Save", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Information);
 
                 switch (dResult)
                 {
-                    case DialogResult.No: return SaveXsdAs();
-                    case DialogResult.Cancel: return false;
+                    case DialogResult.No: SaveXsdAs(); return;
+                    case DialogResult.Cancel: return;
                 }
             }
 
-            bool result = xsd[0].write();
-
-            if (result)
+            try
             {
-                this.Text = String.Format("{0}{1} - {2}",
-                    xsd[0].Path,
-                    xsd[0].isEncrypted ? " [Encrypted]" : "",
-                    baseTitle);
-                isModified = false;
+                xsd[0].write();
+            }
+            catch (System.Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
-            return result;
+            this.Text = String.Format("{0}{1} - {2}", 
+                xsd[0].Filename, xsd[0].isEncrypted ? " [Encrypted]" : "", baseTitle);
+
+            isModified = false;
         }
 
-        private bool SaveXsdAs(bool withEncryption = false)
+        private void SaveXsdAs(bool withEncryption = false)
         {
-            bool result = false;
             SaveFileDialog dialog = new SaveFileDialog();
             dialog.Filter = "XSD files (*.xsd)|*.xsd|All files (*.*)|*.*";
             dialog.FilterIndex = 1;
 
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                result = xsd[0].write(dialog.FileName, withEncryption);
+            if (dialog.ShowDialog() != DialogResult.OK)
+                return;
 
-                if (result)
-                {
-                    this.Text = String.Format("{0}{1} - {2}",
-                        xsd[0].Path,
-                        xsd[0].isEncrypted ? " [Encrypted]" : "",
-                        baseTitle);
-                    isModified = false;
-                }
+            try
+            {
+                xsd[0].write(dialog.FileName, withEncryption);
+            }
+            catch (System.Exception e)
+            {
+                MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
-            return result;
+            this.Text = String.Format("{0}{1} - {2}",
+                xsd[0].Filename,
+                xsd[0].isEncrypted ? " [Encrypted]" : "",
+                baseTitle);
+            isModified = false;
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFirstXsd();
+            OpenXsd(0);
         }
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrEmpty(xsd[0].Path))
+            if (String.IsNullOrEmpty(xsd[0].Filename))
                 SaveXsdAs();
             else
                 SaveXsd();
@@ -327,162 +368,217 @@ namespace NineDragons_XSD_Editor
 
         private void toolbtnOpen_Click(object sender, EventArgs e)
         {
-            OpenFirstXsd();
+            OpenXsd(0);
         }
 
         private void toolbtnSave_Click(object sender, EventArgs e)
         {
-            if (String.IsNullOrEmpty(xsd[0].Path))
+            if (String.IsNullOrEmpty(xsd[0].Filename))
                 SaveXsdAs();
             else
                 SaveXsd();
         }
 
-        private void btnAddTable_Click(object sender, EventArgs e)
+        private void btnAddSection_Click(object sender, EventArgs e)
         {
-            InputBoxResult result = InputBox.Show("Name:", "Add table", "", new InputBoxValidatingHandler(Validate_AddTable));
+            InputBoxResult result = 
+                InputBox.Show("Name:", "Add section", "", new InputBoxValidatingHandler(Validate_AddSection));
         }
 
-        private void Validate_AddTable(object sender, InputBoxValidatingArgs e)
+        private void Validate_AddSection(object sender, InputBoxValidatingArgs e)
         {
-            string text = e.Text.Trim();
+            string text = e.Text;
             if (text.Length == 0)
             {
                 e.Cancel = true;
-                e.Message = "Table name is required";
+                e.Message = "Section name is required";
                 return;
             }
 
             byte[] bName = Encoding.Unicode.GetBytes(text);
 
-            foreach (XsdTable table in xsd[0].tableCollection.Tables)
+            if (xsd.Count < 1)
             {
-                if (Common.ByteArraysEqual(bName, table.Name))
+                newXsd();
+                setupGrid();
+            }
+
+            foreach (Section section in xsd[0].sectionCollection.Sections)
+            {
+                if (section.NameEqualsTo(bName))
                 {
-                    MessageBox.Show("Duplicate table name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Duplicate section name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
 
-            xsd[0].tableCollection.Tables.Add(new XsdTable(0, bName));
+            xsd[0].sectionCollection.Sections.Add(new Section(0, bName));
             updateStatus();
-            lstTable.ClearSelected();
-            lstTable.SelectedIndex = lstTable.Items.Count - 1;
-            lstTable.Focus();
+            lstSection.ClearSelected();
+            lstSection.SelectedIndex = lstSection.Items.Count - 1;
+            lstSection.Focus();
+
+            dataSectionRows.DataSource = ((Section)lstSection.SelectedItem).XStrings.Rows;
         }
 
-        private void Validate_EditTable(object sender, InputBoxValidatingArgs e)
+        private void Validate_EditSection(object sender, InputBoxValidatingArgs e)
         {
-            string text = e.Text.Trim();
+            string text = e.Text;
             if (text.Length == 0)
             {
                 e.Cancel = true;
-                e.Message = "Table name is required";
+                e.Message = "Section name is required";
                 return;
             }
 
             byte[] bName = Encoding.Unicode.GetBytes(text);
 
-            foreach (XsdTable table in xsd[0].tableCollection.Tables)
+            foreach (Section section in xsd[0].sectionCollection.Sections)
             {
-                if (Common.ByteArraysEqual(bName, table.Name))
+                if (section.NameEqualsTo(bName))
                 {
-                    MessageBox.Show("Duplicate table name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Duplicate section name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
             }
 
-            if (null != lstTable.SelectedItem)
+            if (null != lstSection.SelectedItem)
             {
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                table.Name = bName;
+                Section section = (Section)lstSection.SelectedItem;
+                section.Name = bName;
             }
             updateStatus();
         }
 
-        private void Validate_Find(object sender, InputBoxValidatingArgs e)
+        public bool Replace(string find, string replace, bool replaceAll = false)
         {
-            string text = e.Text.Trim();
-            if (text.Length == 0)
+            var found = Find(find, findSectionIndex, findRowIndex, findColumnIndex);
+            if (found)
             {
-                e.Cancel = true;
-                return;
-            }
+                var section = xsd[0].sectionCollection.Sections[lstSection.SelectedIndex];
+                var row = section.XStrings.Rows[findRowIndex];
+                var str = Encoding.Unicode.GetString(row.TextString[findColumnIndex]);
+                str = str.Replace(find, replace);
 
-            Find(text);
+                row.TextString[findColumnIndex] = Encoding.Unicode.GetBytes(str);
+                row.TextStringLength[findColumnIndex] = str.Length;
+                dataSectionRows.CurrentCell.Value = row.TextString;
+
+                if (replaceAll)
+                {
+                    while (Replace(find, replace, replaceAll)) ;
+                }
+                updateStatus();
+            }
+            return found;
         }
 
-        private bool Find(string text, int tableIndex = 0, int rowIndex = 0)
+        public bool Find(string find, int sectionIndex = 0, int rowIndex = 0, int colIndex = 0)
         {
             var bFound = false;
 
-            if (xsd[0].tableCollection.Tables.Count < 1)
+            if (xsd[0].sectionCollection.Sections.Count < 1)
                 return bFound;
 
-            text = text.Trim();
-            if (text.Length == 0)
+            if (find.Length == 0)
                 return bFound;
 
-            findText = text;
-            findTableIndex = tableIndex;
-            findRowIndex = rowIndex;
+            if (find != lastfindText)
+            {
+                sectionIndex = findSectionIndex = 0;
+                rowIndex = findRowIndex = 0;
+                colIndex = findColumnIndex = 0;
+            }
+            else
+            {
+                findSectionIndex = sectionIndex;
+                findRowIndex = rowIndex;
+                findColumnIndex = colIndex;
+            }
 
-            if (findTableIndex > xsd[0].tableCollection.Tables.Count)
-                findTableIndex = 0;
+            lastfindText = findText = find;
+            
+            if (findColumnIndex >= dataSectionRows.Columns.Count - 1)
+            {
+                findColumnIndex = 0;
+                findRowIndex++;
+            }
 
-            if (findRowIndex > xsd[0].tableCollection.Tables[findTableIndex].RowCollection.Rows.Count)
+            if (findSectionIndex > xsd[0].sectionCollection.Sections.Count)
+                findSectionIndex = 0;
+
+            if (findRowIndex > xsd[0].sectionCollection.Sections[findSectionIndex].XStrings.Rows.Count)
                 findRowIndex = 0;
 
-            for (int i = findTableIndex; i < xsd[0].tableCollection.Tables.Count; i++)
+            // Section loop
+            for (int i = findSectionIndex; i < xsd[0].sectionCollection.Sections.Count; i++)
             {
-                var table = xsd[0].tableCollection.Tables[i];
-                for (int j = findRowIndex; j < table.RowCollection.Rows.Count; j++)
+                // Row loop
+                var section = xsd[0].sectionCollection.Sections[i];
+                for (int j = findRowIndex; j < section.XStrings.Rows.Count; j++)
                 {
-                    var row = table.RowCollection.Rows[j];
-                    string name = Encoding.Unicode.GetString(row.Name);
-
-                    if (name.Contains(text))
+                    // Column loop
+                    var row = section.XStrings.Rows[j];
+                    for (int k = findColumnIndex; k < row.TextString.Count; k++)
                     {
-                        lstTable.SelectedIndex = i;
-                        dataTableRows.ClearSelection();
-                        dataTableRows.CurrentCell = null;
-                        dataTableRows.Rows[j].Selected = true;
-                        dataTableRows.FirstDisplayedScrollingRowIndex = j;
-                        bFound = true;
-                        findTableIndex = i;
-                        findRowIndex = j;
-                        return bFound;
+                        string name = Encoding.Unicode.GetString(row.TextString[k]);
+                        if (name.Contains(find))
+                        {
+                            findSectionIndex = i;
+                            findRowIndex = j;
+                            findColumnIndex = k;
+
+                            lstSection.SelectedIndex = findSectionIndex;
+                            dataSectionRows.ClearSelection();
+                            dataSectionRows.CurrentCell = dataSectionRows[findColumnIndex + 1, findRowIndex];
+                            dataSectionRows.FirstDisplayedScrollingRowIndex = findRowIndex;
+                            dataSectionRows.Focus();
+                            
+                            bFound = true;
+                            return bFound;
+                        }
                     }
                 }
             }
 
-            findTableIndex = 0;
+            findSectionIndex = 0;
             findRowIndex = 0;
+            findColumnIndex = 0;
 
             return bFound;
         }
 
-
-        private void btnEditTable_Click(object sender, EventArgs e)
+        public bool FindNext()
         {
-            if (null != lstTable.SelectedItem)
+            return Find(findText, findSectionIndex, findRowIndex, findColumnIndex + 1);
+        }
+
+        public bool FindNext(string find)
+        {
+            findText = find;
+            return FindNext();
+        }
+
+        private void btnEditSection_Click(object sender, EventArgs e)
+        {
+            if (null != lstSection.SelectedItem)
             {
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                InputBoxResult result = InputBox.Show("Name:", "Edit table", table.UnicodeName, new InputBoxValidatingHandler(Validate_EditTable));
+                Section section = (Section)lstSection.SelectedItem;
+                InputBoxResult result = InputBox.Show("Name:", "Edit section", section.UnicodeName, new InputBoxValidatingHandler(Validate_EditSection));
             }
         }
 
-        private void btnDeleteTable_Click(object sender, EventArgs e)
+        private void btnDeleteSection_Click(object sender, EventArgs e)
         {
-            if (null != lstTable.SelectedItem)
+            if (null != lstSection.SelectedItem)
             {
-                if (DialogResult.Yes != MessageBox.Show("Are you sure you want to delete this table?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
+                if (DialogResult.Yes != MessageBox.Show("Are you sure you want to delete this section?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question))
                     return;
 
-                dataTableRows.EndEdit();
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                table.RowCollection.Rows.Clear();
-                xsd[0].tableCollection.Tables.Remove(table);
+                dataSectionRows.EndEdit();
+                Section section = (Section)lstSection.SelectedItem;
+                section.XStrings.Rows.Clear();
+                xsd[0].sectionCollection.Sections.Remove(section);
             }
         }
 
@@ -490,15 +586,19 @@ namespace NineDragons_XSD_Editor
 
         private void btnCancelBusy_Click(object sender, EventArgs e)
         {
-            if (backgroundWorker.IsBusy &&
-                backgroundWorker.WorkerSupportsCancellation)
+            if (mergeWorker.IsBusy && mergeWorker.WorkerSupportsCancellation)
             {
                 labelBusyStatus.Text = "Cancelling...";
-                backgroundWorker.CancelAsync();
+                mergeWorker.CancelAsync();
+            }
+            else if (loadWorker.IsBusy && loadWorker.WorkerSupportsCancellation)
+            {
+                labelBusyStatus.Text = "Cancelling...";
+                loadWorker.CancelAsync();
             }
         }
 
-        private void busyTablePanel_VisibleChanged(object sender, EventArgs e)
+        private void busySectionPanel_VisibleChanged(object sender, EventArgs e)
         {
             Panel panel = sender as Panel;
 
@@ -511,16 +611,16 @@ namespace NineDragons_XSD_Editor
                 labelBusyStatus.Text = "Please wait...";
                 progressIndicator.Start();
 
-                statusbar.Enabled = false;
-                toolbar.Enabled = false;
                 menu.Enabled = false;
+                toolbar.Enabled = false;
+                statusbar.Enabled = false;
                 splitContainer1.Panel1.Enabled = false;
 
                 foreach (Control c in splitContainer1.Panel2.Controls)
                 {
                     switch (c.Name)
                     {
-                        case "busyTablePanel":
+                        case "busySectionPanel":
                             c.Enabled = true;
                             break;
                         default:
@@ -544,43 +644,113 @@ namespace NineDragons_XSD_Editor
         }
 
 
-        // Delegate methods
-        private delegate Xsd.MergeResult MergeDelegate();
-        private Xsd.MergeResult DelegateMergeXsd()
-        {
-            return xsd[0].Merge(xsd[1], Xsd.MergeType.MatchingOnly); ;
-        }
-
-        private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+        #region Delegates
+        private void LoadWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             BackgroundWorker worker = sender as BackgroundWorker;
-
-            if (worker != null)
+            if (worker == null) return;
+            if (worker.CancellationPending)
             {
-                if (worker.CancellationPending)
-                {
-                    e.Cancel = true;
-                }
-                else
-                {
-                    try
-                    {
-                        e.Result = ((MergeDelegate)e.Argument).Invoke();
-                    }
-                    catch (Exception)
-                    {
-                        e.Result = null;
-                        e.Cancel = true;
-                    }
-                }
+                e.Cancel = true;
+                return;
+            }
+
+            try
+            {
+                int xsdIndex = (int)e.Argument;
+                xsd[xsdIndex].load();
+                e.Result = true;
+            }
+            catch (NineDragons.XStringDatabase.Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                e.Result = null;
+                e.Cancel = true;
             }
         }
 
-        private void backgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private delegate Xsd.MergeResult MergeXsdDelegate();
+        private Xsd.MergeResult DelegateMergeXsd()
         {
+            return xsd[0].Merge(xsd[1], Xsd.MergeType.MatchingOnly);
+        }
+        #endregion
+
+        #region BackgroundWorker Events
+        private void LoadWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            loadWorker.DoWork -= new DoWorkEventHandler(this.LoadWorker_DoWork);
+            loadWorker.RunWorkerCompleted -= new RunWorkerCompletedEventHandler(this.LoadWorker_RunWorkerCompleted);
+            loadWorker.Dispose();
+
+            if (e.Cancelled || e.Result == null || (bool)e.Result == false)
+            {
+                busySectionPanel.Visible = false;
+                return;
+            }
+
+            lstSection.DataSource = xsd[0].sectionCollection.Sections;
+            lstSection.DisplayMember = "UnicodeName";
+
+            // Update statusbar
+            updateStatus();
+
+            // Update menu
+            saveToolStripMenuItem.Enabled = true;
+            saveAsToolStripMenuItem.Enabled = true;
+            saveWithEncryptionToolStripMenuItem.Enabled = true;
+            findToolStripMenuItem1.Enabled = true;
+            findNextToolStripMenuItem.Enabled = true;
+            replaceToolStripMenuItem.Enabled = true;
+
+            // Update toolbar
+            toolbtnSave.Enabled = true;
+            toolbtnMerge.Enabled = true;
+            toolbtnFind.Enabled = true;
+
+            dataSectionRows.Enabled = true;
+
+            this.Text = String.Format("{0}{1} - {2}",
+                xsd[0].Filename,
+                xsd[0].isEncrypted ? " [Encrypted]" : "",
+                baseTitle);
+            setupGrid();
+
+
+            busySectionPanel.Visible = false;
+        }
+
+        private void MergeWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+
+            if (worker == null) return;
+            if (worker.CancellationPending)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            try
+            {
+                e.Result = ((MergeXsdDelegate)e.Argument).Invoke();
+            }
+            catch (System.Exception)
+            {
+                e.Result = null;
+                e.Cancel = true;
+            }
+        }
+
+        private void MergeWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            mergeWorker.DoWork -= new DoWorkEventHandler(this.MergeWorker_DoWork);
+            mergeWorker.RunWorkerCompleted -= new RunWorkerCompletedEventHandler(this.MergeWorker_RunWorkerCompleted);
+            mergeWorker.Dispose();
+
             if (e.Cancelled || e.Result == null)
             {
-                busyTablePanel.Visible = false;
+                busySectionPanel.Visible = false;
                 return;
             }
 
@@ -588,149 +758,66 @@ namespace NineDragons_XSD_Editor
 
             switch (result.status)
             {
-                    /*
-                case Xsd.MergeStatus.Success:
-                    MessageBox.Show("Merge was successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    break;
-                     */
                 case Xsd.MergeStatus.Failure:
                     MessageBox.Show("Merge failed!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
             }
 
-            busyTablePanel.Visible = false;
+            busySectionPanel.Visible = false;
         }
+        #endregion
+
 
         private void matchingOnlyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (OpenSecondXsd())
+            try
             {
-                busyTablePanel.Visible = true;
-
-                if (backgroundWorker.IsBusy && backgroundWorker.WorkerSupportsCancellation)
-                    backgroundWorker.CancelAsync();
-                else
-                    backgroundWorker.RunWorkerAsync(new MergeDelegate(DelegateMergeXsd));
+                OpenXsd(1);
             }
-        }
-
-        private void contextMenuExportXML_Click(object sender, EventArgs e)
-        {
-            if (null != lstTable.SelectedItem)
+            catch (NineDragons.XStringDatabase.Exception ex)
             {
-                XsdTable table = (XsdTable)lstTable.SelectedItem;
-                XmlDocument doc = new XmlDocument();
-
-                char[] invalidChars = new char[] { '\t', '\r', '\n', '\x0B', '\0' };
-
-                XmlWriterSettings settings = new XmlWriterSettings();
-                settings.Indent = true;
-
-                using (XmlWriter writer = XmlWriter.Create(table.UnicodeName.Trim(invalidChars) + ".xml", settings))
-                {
-                    writer.WriteStartDocument();
-                    writer.WriteStartElement(table.UnicodeName.Trim(invalidChars));
-
-                    foreach (XsdTableRow row in table.RowCollection.Rows)
-                    {
-                        writer.WriteStartElement("row");
-                        writer.WriteElementString("id", row.ID.ToString());
-                        writer.WriteElementString("name", Encoding.Unicode.GetString(row.Name).Trim(invalidChars));
-                        writer.WriteEndElement();
-                    }
-
-                    writer.WriteEndElement();
-                    writer.WriteEndDocument();
-                }
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-        }
 
-        private void contextMenuTable_Opening(object sender, CancelEventArgs e)
-        {
-            contextMenuTable.Enabled = (lstTable.SelectedIndex < 0 ? false : true);
-        }
+            mergeWorker = new BackgroundWorker();
+            mergeWorker.WorkerSupportsCancellation = true;
+            mergeWorker.DoWork += new DoWorkEventHandler(this.MergeWorker_DoWork);
+            mergeWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(this.MergeWorker_RunWorkerCompleted);
+            busySectionPanel.Visible = true;
 
-        private static DialogResult SetKeysDialog(ref byte[] keys)
-        {
-            System.Drawing.Size size = new System.Drawing.Size(175, 95);
-            Form inputBox = new Form();
-
-            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            inputBox.ClientSize = size;
-            inputBox.Text = "Set Cipher Keys";
-
-            System.Windows.Forms.Label label1 = new Label();
-            label1.Size = new System.Drawing.Size(80, 23);
-            label1.Location = new System.Drawing.Point(10, 10);
-            label1.Text = "Cipher Key 1:";
-            inputBox.Controls.Add(label1);
-
-            System.Windows.Forms.TextBox key1 = new TextBox();
-            key1.Size = new System.Drawing.Size(75, 23);
-            key1.Location = new System.Drawing.Point(90, 7);
-            key1.MaxLength = 2;
-            key1.TextAlign = HorizontalAlignment.Center;
-            key1.Text = keys[0].ToString("X2");
-            inputBox.Controls.Add(key1);
-
-            System.Windows.Forms.Label label2 = new Label();
-            label2.Size = new System.Drawing.Size(80, 23);
-            label2.Location = new System.Drawing.Point(10, 37);
-            label2.Text = "Cipher Key 2:";
-            inputBox.Controls.Add(label2);
-
-            System.Windows.Forms.TextBox key2 = new TextBox();
-            key2.Size = new System.Drawing.Size(75, 23);
-            key2.Location = new System.Drawing.Point(90, 34);
-            key2.MaxLength = 2;
-            key2.TextAlign = HorizontalAlignment.Center;
-            key2.Text = keys[1].ToString("X2");
-            inputBox.Controls.Add(key2);
-
-            Button okButton = new Button();
-            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            okButton.Name = "okButton";
-            okButton.Size = new System.Drawing.Size(75, 26);
-            okButton.Text = "&OK";
-            okButton.Location = new System.Drawing.Point(10, 62);
-            inputBox.Controls.Add(okButton);
-
-            Button cancelButton = new Button();
-            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            cancelButton.Name = "cancelButton";
-            cancelButton.Size = new System.Drawing.Size(75, 26);
-            cancelButton.Text = "&Cancel";
-            cancelButton.Location = new System.Drawing.Point(90, 62);
-            inputBox.Controls.Add(cancelButton);
-
-            DialogResult result = inputBox.ShowDialog();
-
-            if (!String.IsNullOrEmpty(key1.Text))
-                keys[0] = Convert.ToByte(key1.Text, 16);
-            if (!String.IsNullOrEmpty(key2.Text))
-                keys[1] = Convert.ToByte(key2.Text, 16);
-
-            return result;
+            if (mergeWorker.IsBusy && mergeWorker.WorkerSupportsCancellation)
+                mergeWorker.CancelAsync();
+            else
+                mergeWorker.RunWorkerAsync(new MergeXsdDelegate(DelegateMergeXsd));
         }
 
         private void setKeysToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SetKeysDialog(ref keys);
+            Form form = new UI.InputKeyDialog(ref keys);
+            form.ShowDialog();
         }
 
         private void toolbtnFind_Click(object sender, EventArgs e)
         {
-            InputBoxResult result = InputBox.Show("Name:", "Find", "", new InputBoxValidatingHandler(Validate_Find));
+            Form form = new UI.FindWindow(this);
+            form.Show();
         }
 
         private void findToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            InputBoxResult result = InputBox.Show("Name:", "Find", "", new InputBoxValidatingHandler(Validate_Find));
+            toolbtnFind_Click(sender, e);
         }
 
         private void findNextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Find(findText, findTableIndex, findRowIndex+1);
+            Find(findText, findSectionIndex, findRowIndex, findColumnIndex + 1);
+        }
+
+        private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Form form = new UI.ReplaceWindow(this);
+            form.Show();
         }
     }
 }
