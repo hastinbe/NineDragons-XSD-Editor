@@ -95,6 +95,13 @@ namespace NineDragons_XSD_Editor.Properties {
             }
         }
         
+        internal static System.Drawing.Bitmap key {
+            get {
+                object obj = ResourceManager.GetObject("key", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
         internal static System.Drawing.Bitmap merge {
             get {
                 object obj = ResourceManager.GetObject("merge", resourceCulture);
@@ -109,9 +116,9 @@ namespace NineDragons_XSD_Editor.Properties {
             }
         }
         
-        internal static System.Drawing.Bitmap table {
+        internal static System.Drawing.Bitmap section {
             get {
-                object obj = ResourceManager.GetObject("table", resourceCulture);
+                object obj = ResourceManager.GetObject("section", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
