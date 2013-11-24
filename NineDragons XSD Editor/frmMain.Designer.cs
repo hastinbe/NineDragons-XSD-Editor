@@ -34,7 +34,6 @@ namespace NineDragons_XSD_Editor
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(frmMain));
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.lstSection = new NineDragons_XSD_Editor.Components.ListBoxEx();
             this.flowSectionControls = new System.Windows.Forms.FlowLayoutPanel();
             this.btnAddSection = new System.Windows.Forms.Button();
             this.btnEditSection = new System.Windows.Forms.Button();
@@ -43,12 +42,11 @@ namespace NineDragons_XSD_Editor
             this.progressIndicator = new ProgressControls.ProgressIndicator();
             this.labelBusyStatus = new System.Windows.Forms.Label();
             this.btnCancelBusy = new System.Windows.Forms.Button();
-            this.dataSectionRows = new NineDragons_XSD_Editor.Components.DataGridViewEx();
             this.layout = new System.Windows.Forms.TableLayoutPanel();
             this.statusbar = new System.Windows.Forms.StatusStrip();
-            this.toolbar = new System.Windows.Forms.ToolStrip();
             this.toollblNumSection = new System.Windows.Forms.ToolStripStatusLabel();
             this.toollblNumRow = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolbar = new System.Windows.Forms.ToolStrip();
             this.toolbtnOpen = new System.Windows.Forms.ToolStripButton();
             this.toolbtnSave = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -72,6 +70,8 @@ namespace NineDragons_XSD_Editor
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
+            this.lstSection = new NineDragons_XSD_Editor.Components.ListBoxEx();
+            this.dataSectionRows = new NineDragons_XSD_Editor.Components.DataGridViewEx();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -80,8 +80,11 @@ namespace NineDragons_XSD_Editor
             this.splitContainer2.SuspendLayout();
             this.flowSectionControls.SuspendLayout();
             this.busySectionPanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dataSectionRows)).BeginInit();
             this.layout.SuspendLayout();
+            this.statusbar.SuspendLayout();
+            this.toolbar.SuspendLayout();
+            this.menu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataSectionRows)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -98,7 +101,7 @@ namespace NineDragons_XSD_Editor
             // 
             this.splitContainer1.Panel2.Controls.Add(this.busySectionPanel);
             this.splitContainer1.Panel2.Controls.Add(this.dataSectionRows);
-            this.splitContainer1.Size = new System.Drawing.Size(1110, 470);
+            this.splitContainer1.Size = new System.Drawing.Size(1110, 469);
             this.splitContainer1.SplitterDistance = 212;
             this.splitContainer1.SplitterWidth = 3;
             this.splitContainer1.TabIndex = 2;
@@ -118,23 +121,10 @@ namespace NineDragons_XSD_Editor
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.flowSectionControls);
-            this.splitContainer2.Size = new System.Drawing.Size(212, 470);
-            this.splitContainer2.SplitterDistance = 433;
+            this.splitContainer2.Size = new System.Drawing.Size(212, 469);
+            this.splitContainer2.SplitterDistance = 432;
             this.splitContainer2.SplitterWidth = 6;
             this.splitContainer2.TabIndex = 1;
-            // 
-            // lstSection
-            // 
-            this.lstSection.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lstSection.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-            this.lstSection.FormattingEnabled = true;
-            this.lstSection.ItemHeight = 18;
-            this.lstSection.Location = new System.Drawing.Point(0, 0);
-            this.lstSection.Margin = new System.Windows.Forms.Padding(3, 6, 3, 6);
-            this.lstSection.Name = "lstSection";
-            this.lstSection.Size = new System.Drawing.Size(212, 433);
-            this.lstSection.TabIndex = 0;
-            this.lstSection.SelectedIndexChanged += new System.EventHandler(this.lstSection_SelectedIndexChanged);
             // 
             // flowSectionControls
             // 
@@ -204,7 +194,7 @@ namespace NineDragons_XSD_Editor
             this.busySectionPanel.Controls.Add(this.progressIndicator);
             this.busySectionPanel.Controls.Add(this.labelBusyStatus);
             this.busySectionPanel.Controls.Add(this.btnCancelBusy);
-            this.busySectionPanel.Location = new System.Drawing.Point(346, 204);
+            this.busySectionPanel.Location = new System.Drawing.Point(346, 203);
             this.busySectionPanel.Name = "busySectionPanel";
             this.busySectionPanel.Size = new System.Drawing.Size(185, 80);
             this.busySectionPanel.TabIndex = 7;
@@ -244,20 +234,6 @@ namespace NineDragons_XSD_Editor
             this.btnCancelBusy.UseVisualStyleBackColor = false;
             this.btnCancelBusy.Click += new System.EventHandler(this.btnCancelBusy_Click);
             // 
-            // dataSectionRows
-            // 
-            this.dataSectionRows.BackgroundColor = System.Drawing.SystemColors.Window;
-            this.dataSectionRows.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataSectionRows.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dataSectionRows.Enabled = false;
-            this.dataSectionRows.Location = new System.Drawing.Point(0, 0);
-            this.dataSectionRows.Name = "dataSectionRows";
-            this.dataSectionRows.Size = new System.Drawing.Size(895, 470);
-            this.dataSectionRows.TabIndex = 1;
-            this.dataSectionRows.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataSectionRows_CellEndEdit);
-            this.dataSectionRows.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataSectionRows_CellFormatting);
-            this.dataSectionRows.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.dataSectionRows_CellParsing);
-            // 
             // layout
             // 
             this.layout.ColumnCount = 1;
@@ -266,14 +242,14 @@ namespace NineDragons_XSD_Editor
             this.layout.Controls.Add(this.toolbar, 0, 0);
             this.layout.Controls.Add(this.splitContainer1, 0, 1);
             this.layout.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.layout.Location = new System.Drawing.Point(0, 24);
+            this.layout.Location = new System.Drawing.Point(0, 25);
             this.layout.Name = "layout";
             this.layout.RowCount = 3;
             this.layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 24F));
             this.layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 21F));
-            this.layout.Size = new System.Drawing.Size(1116, 524);
+            this.layout.Size = new System.Drawing.Size(1116, 523);
             this.layout.TabIndex = 3;
             // 
             // statusbar
@@ -282,11 +258,21 @@ namespace NineDragons_XSD_Editor
             this.statusbar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toollblNumSection,
             this.toollblNumRow});
-            this.statusbar.Location = new System.Drawing.Point(0, 500);
+            this.statusbar.Location = new System.Drawing.Point(0, 499);
             this.statusbar.Name = "statusbar";
             this.statusbar.Size = new System.Drawing.Size(1116, 24);
             this.statusbar.TabIndex = 4;
             this.statusbar.Text = "statusStrip1";
+            // 
+            // toollblNumSection
+            // 
+            this.toollblNumSection.Name = "toollblNumSection";
+            this.toollblNumSection.Size = new System.Drawing.Size(0, 19);
+            // 
+            // toollblNumRow
+            // 
+            this.toollblNumRow.Name = "toollblNumRow";
+            this.toollblNumRow.Size = new System.Drawing.Size(0, 19);
             // 
             // toolbar
             // 
@@ -302,16 +288,6 @@ namespace NineDragons_XSD_Editor
             this.toolbar.Size = new System.Drawing.Size(1116, 24);
             this.toolbar.TabIndex = 3;
             this.toolbar.Text = "toolStrip1";
-            // 
-            // toollblNumSection
-            // 
-            this.toollblNumSection.Name = "toollblNumSection";
-            this.toollblNumSection.Size = new System.Drawing.Size(0, 19);
-            // 
-            // toollblNumRow
-            // 
-            this.toollblNumRow.Name = "toollblNumRow";
-            this.toollblNumRow.Size = new System.Drawing.Size(0, 19);
             // 
             // toolbtnOpen
             // 
@@ -374,7 +350,7 @@ namespace NineDragons_XSD_Editor
             this.menu.Location = new System.Drawing.Point(0, 0);
             this.menu.Name = "menu";
             this.menu.Padding = new System.Windows.Forms.Padding(6, 3, 0, 3);
-            this.menu.Size = new System.Drawing.Size(1116, 24);
+            this.menu.Size = new System.Drawing.Size(1116, 25);
             this.menu.TabIndex = 4;
             this.menu.Text = "menuStrip1";
             // 
@@ -514,6 +490,33 @@ namespace NineDragons_XSD_Editor
             // 
             this.backgroundWorker.WorkerSupportsCancellation = true;
             // 
+            // lstSection
+            // 
+            this.lstSection.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lstSection.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.lstSection.FormattingEnabled = true;
+            this.lstSection.ItemHeight = 18;
+            this.lstSection.Location = new System.Drawing.Point(0, 0);
+            this.lstSection.Margin = new System.Windows.Forms.Padding(3, 6, 3, 6);
+            this.lstSection.Name = "lstSection";
+            this.lstSection.Size = new System.Drawing.Size(212, 432);
+            this.lstSection.TabIndex = 0;
+            this.lstSection.SelectedIndexChanged += new System.EventHandler(this.lstSection_SelectedIndexChanged);
+            // 
+            // dataSectionRows
+            // 
+            this.dataSectionRows.BackgroundColor = System.Drawing.SystemColors.Window;
+            this.dataSectionRows.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataSectionRows.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dataSectionRows.Enabled = false;
+            this.dataSectionRows.Location = new System.Drawing.Point(0, 0);
+            this.dataSectionRows.Name = "dataSectionRows";
+            this.dataSectionRows.Size = new System.Drawing.Size(895, 469);
+            this.dataSectionRows.TabIndex = 1;
+            this.dataSectionRows.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataSectionRows_CellEndEdit);
+            this.dataSectionRows.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataSectionRows_CellFormatting);
+            this.dataSectionRows.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.dataSectionRows_CellParsing);
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 18F);
@@ -534,9 +537,15 @@ namespace NineDragons_XSD_Editor
             this.splitContainer2.ResumeLayout(false);
             this.flowSectionControls.ResumeLayout(false);
             this.busySectionPanel.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dataSectionRows)).EndInit();
             this.layout.ResumeLayout(false);
             this.layout.PerformLayout();
+            this.statusbar.ResumeLayout(false);
+            this.statusbar.PerformLayout();
+            this.toolbar.ResumeLayout(false);
+            this.toolbar.PerformLayout();
+            this.menu.ResumeLayout(false);
+            this.menu.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataSectionRows)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

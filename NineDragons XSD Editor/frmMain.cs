@@ -63,7 +63,8 @@ namespace NineDragons_XSD_Editor
                 {
                     DataPropertyName = "TextString",
                     HeaderText = xsd[0].languages[i].Value,
-                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
+                    Resizable = DataGridViewTriState.True
                 });
             }
         }
